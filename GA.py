@@ -1,77 +1,77 @@
 #----------------------------Imports------------------------------
 import numpy as np
+import pandas as pd
 from meep.materials import Au
 from func import *
 
 #----------------------------Inputs------------------------------
-cytop = 0.100
-col = 100  
-row=4
-d1 = 1.33
-g = 1.45
-d2 =1.34
-mat_options=[0,5,2]
-material = [3,0,4,0,5] #[Au(0),Al(1),Ag(2),Glass(3),diel1(4),diel2(5)]
-side = 1
-generation = 40
-population = 8
+vari = ['CytopThickness','GapThickness','SpacerRI','GoldThickness','Cr Thickness','Fitness']
+deltaP = [0.005,0.005,0.01,0.005,0.001]
+limit_min = [0.005,0.01,1.30,0.005,0.003]
+limit_max = [0.300,0.5,1.40,0.06,0.015]
+material = [3,0,4,6,0,5] #[Au(0),Al(1),Ag(2),Glass(3),diel1(4),diel2(5),Cr(6)]
+generation = 30
+population = 6 #minimum of 4
+step = 10
+starter=0 
+file = 'starter.txt'
+resolution = 150         #pixels/um
+
+#----------------------------Function------------------------------
+ideal_peak = 0.647
+weights = [0.5,.0,0.5] #Peak Position, FWHM, Enhancement (sum to 1)
+
 
 #----------------------------Variables------------------------------
-grate=0.005
-dpml = 0.2                  #um
-air = 0.4                   #um
-resolution = 100         #pixels/um
-THICKNESS = [0.100,0.050,cytop,0.010,0.500 ]             #um
-lambda_min = 0.30
-lambda_max = 0.800           # maximum source waveWIDTH
-PADDING = lambda_max 
-thick=np.sum(THICKNESS)
-nfreq=60
-fmin = 1/lambda_max         # minimum source frequency
-fmax = 1/lambda_min         # maximum source frequency
-f_cen = 0.5*(fmin+fmax)     # source frequency center
-df = fmax-fmin              # source frequency width
-sx = (col)*grate
-sy = dpml+thick+air+dpml
+Evolution = pd.DataFrame(columns=vari)
+P_space = [(np.arange(limit_min[0],limit_max[0],deltaP[0])),(np.arange(limit_min[1],limit_max[1],deltaP[1])),(np.arange(limit_min[2],limit_max[2],deltaP[2])),(np.arange(limit_min[3],limit_max[3],deltaP[3])),(np.arange(limit_min[4],limit_max[4],deltaP[4]))]
+f_cen,df,fmin,fmax,nfreq,sy,dpml,air,sx,thick,g,d2 = setvar()
 
-init_refl_data,init_tran_flux = simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,0,0,0,0,grate,THICKNESS)
 
-progress=np.zeros(generation)
-R=np.zeros(population)
-Ref=np.zeros(population)
-pop=np.zeros((population,col*row))
+init_refl_data,init_tran_flux = simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,0,0,0,0,thick)
+param = np.zeros((population,len(deltaP)))
+F = np.zeros(population)
 for j in range(population):
-    matter = np.random.choice(mat_options, size=(col*row))
-    pop[j,:]=matter
-    geometry = geom(THICKNESS,sx,sy,grate,g,d1,d2,material,col,row,matter,dpml)
-    en,re = simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_refl_data,init_tran_flux,1,grate,THICKNESS)
-    R[j]=en
-    Ref[j]=re
-R_init=R
-saint = np.zeros(col*row)
+    spacer,d1,THICKNESS,P = paramset(P_space)
+    geometry = geom2(THICKNESS,sx,sy,g,d1,d2,material,spacer,dpml)
+    en,Rs,wl = simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_refl_data,init_tran_flux,1,THICKNESS)
+    F[j],output = fitness(weights,en,ideal_peak,Rs,wl)
+    param[j,:] = P
+Evolution = scribe(Evolution,param,F,vari)
+eve = output 
+migrate1 = param[np.argmax(F)]
+par = roulette(F,P_space,param)
+pop = genes(par,P_space,population)
+
 for i in range(generation):
-    par = roulette(R,pop,col*row)
-    pop2=pop
-    saint = imagine(saint,par,col*row)
-    pop = genes(par,population,col*row,mat_options)
-    pop3=pop
-    R=np.zeros(population)
     for j in range(population):
-        matter=pop[j,:]
-        geometry = geom(THICKNESS,sx,sy,grate,g,d1,d2,material,col,row,matter,dpml)
-        en,re = simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_refl_data,init_tran_flux,1,grate,THICKNESS)
-        R[j]=en
-        Ref[j]=re
-    print(i)
-    progress[i]=np.max(R)
-R_final=R    
-best_grating = pop[np.argmin(R),:]       
-saint = saint/generation    
-print(progress)
-print(best_grating)
-print(Ref)
-print(R_final)    
-end = posty(saint,best_grating,progress,col)
+        cytop,spacer,d1,gold,cr = pop[j,:]
+        THICKNESS = thicker(cytop,gold,cr)
+        geometry = geom2(THICKNESS,sx,sy,g,d1,d2,material,spacer,dpml)
+        en,Rs,wl = simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_refl_data,init_tran_flux,1,THICKNESS)
+        F[j],output = fitness(weights,en,ideal_peak,Rs,wl)
+        param[j,:] = pop[j,:]
+    Evolution = scribe(Evolution,param,F,vari)
+    par = roulette(F,P_space,param)
+    pop = genes(par,P_space,population)
+    
+    #Evolutionary progress
+    #Evolve changes the fitness parameters based on how well the substrate is doing
+    #Migrate means that the substrate with the highest fitness has been there too long, and is moved into a new random population
+    test = i/step
+    if test.is_integer() == True:
+        migrate2=param[np.argmax(F)]
+        pop = migrate(migrate1,migrate2,pop,P_space)
+        migrate1 = migrate2
+        eve1 = output
+        weights = evolve(weights,output,eve,eve1) 
+        eve=eve1
+        Evolution.to_csv('Evolution.csv',index=False)
+        print(i) 
+        
+resolution=200
+finalize(Evolution,material,resolution,init_refl_data,init_tran_flux,weights,ideal_peak)
+
       
     
 
