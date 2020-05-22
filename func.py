@@ -17,10 +17,10 @@ def setvar():
     dpml = 0.2                  #um
     air = 0.4                   #um
     THICKNESS = [0.400,0.050,0.700]             #um
-    lambda_min = 0.55
+    lambda_min = 0.40
     lambda_max = 0.75           # maximum source waveWIDTH
     thick=np.sum(THICKNESS)
-    nfreq=60
+    nfreq=100
     fmin = 1/lambda_max         # minimum source frequency
     fmax = 1/lambda_min         # maximum source frequency
     f_cen = 0.5*(fmin+fmax)     # source frequency center
@@ -63,8 +63,8 @@ def simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_
     refl_fr = mp.FluxRegion(center=mp.Vector3(0,0.5*sy-dpml-0.1*air), size=mp.Vector3(x=sx)) 
     mp.quiet(quietval=True)
     if n ==0:
-        if os.path.exists('dft_Z_empty.h5'):
-            os.remove('dft_Z_empty.h5')
+        #if os.path.exists('dft_Z_empty.h5'):
+            #os.remove('dft_Z_empty.h5')
         sim = mp.Simulation(cell_size=cell,
                 boundary_layers=pml_layers,
                 sources=sources,
@@ -88,8 +88,8 @@ def simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_
         get = init_refl_data,init_tran_flux
         
     elif n==1:
-        if os.path.exists('dft_Z_fields.h5'):
-            os.remove('dft_Z_fields.h5')
+        #if os.path.exists('dft_Z_fields.h5'):
+            #os.remove('dft_Z_fields.h5')
         sim = mp.Simulation(cell_size=cell,
                 boundary_layers=pml_layers,
                 sources=sources,
@@ -117,8 +117,8 @@ def simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_
         en = enhance(Rs,0)
         get=en,Rs,wl
     elif n==2:
-        if os.path.exists('dft_Z_fields.h5'):
-            os.remove('dft_Z_fields.h5')
+        #if os.path.exists('dft_Z_fields.h5'):
+            #os.remove('dft_Z_fields.h5')
         sim = mp.Simulation(cell_size=cell,
                 boundary_layers=pml_layers,
                 sources=sources,
@@ -195,13 +195,21 @@ def geom2(THICKNESS,sx,sy,g,d1,d2,material,spacer,dpml):
     geometry=[]
     t=-sy*0.5+dpml
     for i in range(len(THICKNESS)):
-        t+=THICKNESS[i]*0.5
-        geometry.append(mp.Block(mp.Vector3(mp.inf, THICKNESS[i],mp.inf), center=mp.Vector3(0,t,0),  material=mat[material[i]]))
-        t+=THICKNESS[i]*0.5
+        if THICKNESS[i] == 0:
+            pass
+        else:
+            t+=THICKNESS[i]*0.5
+            geometry.append(mp.Block(mp.Vector3(mp.inf, THICKNESS[i],mp.inf), center=mp.Vector3(0,t,0),  material=mat[material[i]]))
+            t+=THICKNESS[i]*0.5
     geometry.append(mp.Block(mp.Vector3(spacer,THICKNESS[-3]+THICKNESS[-2],mp.inf), center=mp.Vector3(0, -(THICKNESS[-2]+THICKNESS[-3])*0.5+t-THICKNESS[-1],0),  material=mat[material[-1]]))
     return(geometry)
     
-def roulette(F,P_space,P):
+def roulette(F,P_space,P,i,generation):
+    if i > generation/2:
+        pass
+    else:
+        temp = 100*(1-(i/(generation/2)))
+        F = np.exp(F/temp)
     F = (F-np.min(F))/(np.max(F)-np.min(F))
     idx = np.argsort(F)  
     F = np.array(F)[idx]
@@ -329,7 +337,7 @@ def imagine(saint,par,sizer):
 
     
 def fitness(weights,en,ideal_peak,Rs,wl):
-    dl = 1/((np.abs(wl[np.argmin(Rs)]-ideal_peak))*1000)
+    dl = 1/(np.exp(np.abs(wl[np.argmin(Rs)]-ideal_peak)/ideal_peak)**5)
     f_half = Rs - np.min(Rs)/2
     maxi = np.argmin(Rs)
     if len(f_half[:maxi]) == 0:
@@ -337,8 +345,11 @@ def fitness(weights,en,ideal_peak,Rs,wl):
     elif len(f_half[maxi:]) == 0:
         fwhm = 0
     else:
-        fwhm = 1/((wl[np.argmin(f_half[:maxi])]*1000) - (wl[maxi+np.argmin(f_half[maxi:])]*1000))
-    en=en/20
+        fwhm = ((wl[np.argmin(f_half[:maxi])]*1000) - (wl[maxi+np.argmin(f_half[maxi:])])*1000)
+    fwhm=np.exp(10-fwhm)
+    if fwhm > 1:
+        fwhm=1
+    en=1/np.exp(np.abs(en-20)/20)
     output = [dl,fwhm,en]
     F = np.dot(weights,output)
     return F,output
