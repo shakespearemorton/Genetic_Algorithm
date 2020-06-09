@@ -1,3 +1,5 @@
+Genetic Algorithm Optimised for 2D simulations on an HPC
+
 Before running, edit the parameters in starter.py and run it within the folder you intend to perform the algorithm in.
 1. Vari contains the names of all of your variables you're trying to optimise, and the last variable should always be fitness.
 2. You can either use a range of values, or a specific dataset in your parameter space.
