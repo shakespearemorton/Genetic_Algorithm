@@ -120,9 +120,9 @@ def simulation(population):
     return(F)
 
 def geom2(THICKNESS,sx,sy,g,d1,d2,material,spacer,dpml):
-    Glass = mp.Medium(epsilon=g)
-    diel1 = mp.Medium(epsilon=d1)
-    diel2 = mp.Medium(epsilon=d2)
+    Glass = mp.Medium(index=g)
+    diel1 = mp.Medium(index=d1)
+    diel2 = mp.Medium(index=d2)
     mat = [Au,Al,Ag,Glass,diel1,diel2,Cr,Ti]
     geometry=[]
     t=-sy*0.5+dpml
