@@ -1,7 +1,15 @@
-#Genetic Algorithm for 2D MEEP layered structure
+Before running, edit the parameters in starter.py and run it within the folder you intend to perform the algorithm in.
+1. Vari contains the names of all of your variables you're trying to optimise, and the last variable should always be fitness.
+2. You can either use a range of values, or a specific dataset in your parameter space.
+3. Adjust the weights to your desired output (sum to 1), and set any specific values that the system should converge to (I wanted a low reflectance at a specific wavelength).
+4. Your population size should be large enough that you can get a good variability in values, but small enough that all samples in your population can be run in ~15 min. (I used a population of 49, which ran in ~6 min)
+4. Your initial population will be outputted.
 
-This version is designed to work on an HPC cluster, if you are running it locally, please go to the 'simulation' function and uncomment all of the checks to see if dft_fields.h5 exist. MEEP has issues overwriting these files, that are not present on the HPC cluster (who knows why).
+Edit sim.py
+Given your input variables, run a simulation, and produce a fitness value. 
 
-Specifically, this code is set up to optimise the separation distance between two metals for a fabry perot mirror, and the thickness of the top metal for LRSPP coupling. The gap in the middle is present so that an incident EM wave will excite LSPR and SPP on the corners of the structure. 
+Adjust 'gene' in func.py
+You can adjust the mutation rate, how many offspring there are, and how many random entrants there are in each iteration.
 
-Outputs include: Structure (in the form of dielectric constants), E-field, Extinction Spectrum, and how it has evolved through the GA
+Run bashitout.sh
+This will submit X generations (max 25 on the HPC) and should finish within an hour or two depending on HPC use and simulation time.
