@@ -14,4 +14,8 @@ Adjust 'gene' in func.py
 You can adjust the mutation rate, how many offspring there are, and how many random entrants there are in each iteration.
 
 Run bashitout.sh
-This will submit X generations (max 25 on the HPC) and should finish within an hour or two depending on HPC use and simulation time.
+This will submit X generations (max 25 on the Imperial HPC) and should finish within an hour or two depending on HPC use and simulation time.
+
+
+Specifics of this algorithm (biosensing):
+This is a proof of concept run, trying to optimise (i) The enhanced area 10-30nm above the surface, (ii) The peak absorption for flurophore 647 (iii) Enhancement close to 20x (to eliminate discontinuity that comes with large enhancement and large concentrations of analyte).
