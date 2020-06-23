@@ -56,9 +56,8 @@ def paramset(P_space):
     P = np.empty(len(P_space))
     for i in range(len(P_space)):
         P[i]=np.random.choice(P_space[i])
-    cytop,spacer,d1,gold,cr,ad,mir = P#EDIT IF ADDING PARAMETERS
-    THICKNESS,thick = thicker(cytop,gold,cr,mir)
-    return spacer,d1,THICKNESS,thick,P
+    period,grating_t,grating_w,sep,mthick,mat = P#EDIT IF ADDING PARAMETERS
+    return P
     
 def simulation(f_cen,df,fmin,fmax,sy,dpml,air,sx,resolution,nfreq,geometry,init_refl_data,init_tran_flux,n,THICKNESS):
     #----------------------Simulation------------------------------
@@ -295,7 +294,7 @@ def genes(F,P_space,population,param):
     #Random
     for j in range(rand):
         x=paramset(P_space)
-        pop[k,:]=x[-1]
+        pop[k,:]=x
         k+=1
     return(pop)
 

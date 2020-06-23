@@ -4,9 +4,6 @@ import pandas as pd
 import os
 from func import *
 
-generation = 10
-population = 49
-
 P_space=loadstart()
 data = loadloads()
 data = data[data != 0]
@@ -15,6 +12,7 @@ Evolution = pd.read_csv("Evolution.csv")
 vari = list(Evolution.columns.values.tolist())
 Progress = pd.read_csv("Progress.csv")
 param = np.loadtxt("population.txt")
+population = len(param)
 x = np.concatenate((param,data),axis=1)
 x = pd.DataFrame(x,columns=vari)
 Progress = pd.concat([x, Progress], ignore_index=True)
@@ -23,9 +21,3 @@ Evolution = scribe(Evolution,param,vari,data)
 Evolution.to_csv('Evolution.csv',index=False)
 pop = genes(data,P_space,population,param)
 np.savetxt("population.txt",pop)
-endGame = len(Evolution)
-if endGame == generation:
-    os.remove('run_start.pbs')
-
-
-
