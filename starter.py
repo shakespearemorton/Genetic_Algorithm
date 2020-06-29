@@ -7,7 +7,7 @@ from func import *
 #period,grating_t,grating_w,sep,mthick,mat
 vari = ['Period','Grating_T','Grating_W','Separation','Metal_Thickness','Au(0) or Ag(1)','Fitness']
 deltaP = [0.010,0.010,0.010,0.005,0.002,1]
-limit_min = [0.200,0.05,0.05,0.0,0.005,0]
+limit_min = [0.180,0.05,0.05,0.0,0.005,0]
 limit_max = [0.700,0.4,0.200,1.0,0.050,1.1]
 # If the array is not evenly spaced, use the append command in line 28
 weights = [1] #low reflection at ideal peak, large enhancement field, large enhancement
@@ -21,7 +21,7 @@ Progress = pd.DataFrame(columns=vari)
 Progress.to_csv('Progress.csv',index=False)
 
 # Set first population
-population = 15
+population = 20
 P_space = []
 for i in range(len(deltaP)):
     P_space.append((np.arange(limit_min[i],limit_max[i],deltaP[i])))
