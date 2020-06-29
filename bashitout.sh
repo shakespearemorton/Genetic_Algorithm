@@ -10,4 +10,4 @@ do
     echo $go
 done
 
-qsub -W depend=afterok:$go sim_check.pbs
+qsub -W depend=afterok:$go run_fitter.pbs
